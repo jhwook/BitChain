@@ -1,3 +1,4 @@
+import { CACHE_MANAGER, Inject } from '@nestjs/common';
 import {
   OnGatewayConnection,
   OnGatewayDisconnect,
@@ -5,10 +6,15 @@ import {
   WebSocketGateway,
 } from '@nestjs/websockets';
 import { WebSocket } from 'ws';
+import { Cache } from 'cache-manager';
 
 @WebSocketGateway()
 export class FinnhubsGateway implements OnGatewayInit {
+  constructor(@Inject(CACHE_MANAGER) private cacheManager: Cache) {}
+
   afterInit() {
+    console.log(this.cacheManager);
+
     console.log('socket init');
     const socket = new WebSocket(
       'wss://ws.finnhub.io?token=cceqv72ad3i6bee15r40',
@@ -20,17 +26,15 @@ export class FinnhubsGateway implements OnGatewayInit {
       );
     });
 
-    // socket.addEventListener('message', function (event) {
-    //   const data = JSON.parse(event.data).data;
-    //   if (Array.isArray(data)) {
-    //     if (data.length !== 0) {
-    //       data.forEach((el) => {
-    //         let { p: price, s: symbol, t: timestamp_unix, v: volume } = el;
-    //         console.log(symbol, price, volume, timestamp_unix);
-    //       });
-    //     }
-    //   }
-    // });
+    socket.addEventListener('message', function (event) {
+      const data = JSON.parse(event.data).data;
+      if (Array.isArray(data) && data.length !== 0) {
+        data.forEach((el) => {
+          const { p: price, s: symbol, t: timestamp_unix, v: volume } = el;
+          // console.log(symbol, price, volume, timestamp_unix);
+        });
+      }
+    });
 
     // // Unsubscribe
     // var unsubscribe = function (symbol) {
